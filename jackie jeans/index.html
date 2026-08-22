@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Jackie Jeans — Fit Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --indigo: #243B55;
+    --indigo-deep: #16263D;
+    --ecru: #F6F1E8;
+    --ecru-soft: #EFE8DA;
+    --brass: #C17B45;
+    --brass-soft: #E7B98A;
+    --ink: #1E2128;
+    --thread: #8C6A4F;
+    --ok: #5C8A6B;
+    --err: #B5503F;
+    --radius: 18px;
+    --shadow: 0 12px 30px -12px rgba(22,38,61,0.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background: var(--ecru);
+    color: var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:22px 22px 10px;
+  }
+  .wordmark{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:19px;
+    letter-spacing:0.02em;
+    color:var(--indigo-deep);
+  }
+  .wordmark span{color:var(--brass);}
+  .tag{
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--thread);
+    font-weight:600;
+  }
+  .stitch-wrap{padding:0 22px 6px;}
+  .stitch-track{
+    position:relative;
+    height:14px;
+    border-top:2px dashed rgba(140,106,79,0.45);
+  }
+  .stitch-needle{
+    position:absolute;top:-7px;
+    width:14px;height:14px;border-radius:50%;
+    background: var(--brass);
+    box-shadow:0 0 0 4px var(--ecru), 0 4px 10px rgba(193,123,69,0.5);
+    transition: left .45s cubic-bezier(.4,0,.2,1);
+  }
+  .stitch-label{
+    font-size:11px;color:var(--thread);font-weight:600;
+    margin-top:6px;letter-spacing:0.03em;
+  }
+  .screen{
+    flex:1;
+    padding:18px 22px 28px;
+    display:flex;flex-direction:column;
+    animation: rise .35s ease;
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  h1.display{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:28px;
+    line-height:1.15;
+    color:var(--indigo-deep);
+    margin:6px 0 8px;
+  }
+  p.lede{
+    font-size:15px;line-height:1.5;color:#454c57;margin:0 0 22px;
+  }
+  .why{
+    font-size:12.5px;color:var(--thread);margin-top:8px;font-style:italic;
+  }
+  /* Choice cards on welcome screen */
+  .choice-grid{display:flex;flex-direction:column;gap:14px;margin-top:6px;}
+  .choice-card{
+    border:1.5px solid rgba(36,59,85,0.12);
+    background:#fff;
+    border-radius:var(--radius);
+    padding:20px;
+    text-align:left;
+    cursor:pointer;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    display:flex;gap:14px;align-items:flex-start;
+  }
+  .choice-card:hover{ transform:translateY(-2px); box-shadow:var(--shadow); border-color:var(--brass-soft); }
+  .choice-icon{
+    width:42px;height:42px;border-radius:12px;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--indigo); color:var(--ecru); font-size:19px;
+  }
+  .choice-card.voice .choice-icon{ background:var(--brass); }
+  .choice-title{ font-weight:700;font-size:16px;margin-bottom:3px;color:var(--indigo-deep);}
+  .choice-desc{ font-size:13.5px;color:#5b6270;line-height:1.4;}
+
+  /* Form controls */
+  .field{ margin-bottom:20px; }
+  .field-label{ font-weight:600;font-size:14.5px;margin-bottom:10px;color:var(--indigo-deep);}
+  select.input, input.input{
+    width:100%;padding:14px 14px;border-radius:12px;border:1.5px solid rgba(36,59,85,0.18);
+    font-size:16px;background:#fff;color:var(--ink);font-family:inherit;
+    appearance:none;-webkit-appearance:none;
+  }
+  select.input:focus, input.input:focus{ outline:2px solid var(--brass-soft); border-color:var(--brass);}
+  .chip-grid{ display:flex;flex-wrap:wrap;gap:10px; }
+  .chip{
+    padding:11px 16px;border-radius:999px;border:1.5px solid rgba(36,59,85,0.18);
+    background:#fff;font-size:14px;font-weight:600;color:var(--indigo-deep);
+    cursor:pointer; transition:all .15s ease; min-height:44px;
+  }
+  .chip.selected{ background:var(--indigo); color:#fff; border-color:var(--indigo); }
+  .choice-row{ display:flex;flex-direction:column;gap:10px; }
+  .choice-btn{
+    text-align:left;padding:16px;border-radius:12px;border:1.5px solid rgba(36,59,85,0.16);
+    background:#fff;font-size:15px;font-weight:600;color:var(--indigo-deep);cursor:pointer;
+    transition:all .15s ease;min-height:52px;
+  }
+  .choice-btn.selected{ background:var(--indigo); color:#fff; border-color:var(--indigo); }
+  .skip-link{
+    align-self:flex-start;margin-top:4px;font-size:13.5px;color:var(--thread);
+    text-decoration:underline;cursor:pointer;background:none;border:none;padding:4px 0;
+  }
+  .brand-size-list{ display:flex;flex-direction:column;gap:14px; }
+  .brand-size-row label{ font-size:13.5px;font-weight:600;color:var(--indigo-deep);display:block;margin-bottom:6px;}
+
+  .nav-row{
+    margin-top:auto;display:flex;gap:10px;padding-top:18px;
+  }
+  .btn{
+    flex:1;padding:15px 18px;border-radius:14px;border:none;font-size:15.5px;font-weight:700;
+    cursor:pointer;font-family:inherit;transition:all .15s ease; min-height:52px;
+  }
+  .btn-primary{ background:var(--indigo); color:#fff; }
+  .btn-primary:disabled{ background:#cfd3da;cursor:not-allowed; }
+  .btn-primary:not(:disabled):active{ transform:scale(.98); }
+  .btn-ghost{ background:transparent;color:var(--indigo);border:1.5px solid rgba(36,59,85,0.2); flex:0 0 88px; }
+  .error-msg{ color:var(--err);font-size:13px;margin-top:-10px;margin-bottom:14px;font-weight:600; }
+
+  /* Voice screen */
+  .voice-stage{ flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px 8px;}
+  .orb{
+    width:128px;height:128px;border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, var(--brass-soft), var(--indigo) 70%);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 18px 40px -10px rgba(36,59,85,0.45);
+    margin-bottom:26px;position:relative;
+  }
+  .orb::after{
+    content:'';position:absolute;inset:-10px;border-radius:50%;
+    border:2px solid var(--brass-soft);opacity:0;
+  }
+  .orb.listening::after{ animation: pulse 1.4s ease-out infinite; }
+  .orb.speaking{ animation: bob 1s ease-in-out infinite; }
+  @keyframes pulse{ 0%{opacity:.7;transform:scale(1);} 100%{opacity:0;transform:scale(1.35);} }
+  @keyframes bob{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
+  .orb-icon{ font-size:42px; color:#fff; }
+  .voice-status{ font-size:12.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--thread);font-weight:700;margin-bottom:14px; }
+  .caption-card{
+    background:#fff;border-radius:16px;padding:18px;width:100%;box-shadow:var(--shadow);
+    min-height:78px;display:flex;flex-direction:column;gap:6px;text-align:left;
+  }
+  .caption-ai{ font-size:15.5px;color:var(--indigo-deep);font-weight:600;line-height:1.4; }
+  .caption-user{ font-size:14px;color:var(--thread);font-style:italic;min-height:18px; }
+  .voice-controls{ display:flex;gap:10px;margin-top:20px;width:100%; }
+  .icon-btn{
+    flex:1;padding:13px;border-radius:12px;border:1.5px solid rgba(36,59,85,0.18);background:#fff;
+    font-size:13.5px;font-weight:700;color:var(--indigo);cursor:pointer;min-height:48px;
+  }
+  .icon-btn.danger{ color:var(--err); border-color:rgba(181,80,63,0.35); }
+  .fallback-chip-grid{ display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;width:100%; }
+
+  .dot-row{ display:flex;gap:6px;justify-content:center;margin-top:18px; }
+  .dot{ width:6px;height:6px;border-radius:50%;background:rgba(36,59,85,0.18); }
+  .dot.done{ background:var(--brass); }
+  .dot.active{ background:var(--indigo); }
+
+  /* completion */
+  .complete-wrap{ flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center; }
+  .stamp{
+    width:64px;height:64px;border-radius:50%;background:var(--ok);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 18px;
+  }
+  .summary-card{
+    background:#fff;border-radius:16px;padding:18px;text-align:left;margin:18px 0;
+    box-shadow:var(--shadow); font-size:13.5px;line-height:1.7;color:#444b58;
+  }
+  .summary-card b{ color:var(--indigo-deep); }
+  .redirect-note{ font-size:12.5px;color:var(--thread);margin-top:14px; }
+  .unsupported{
+    background:#fff;border-radius:14px;padding:16px;font-size:13.5px;color:var(--err);
+    border:1.5px solid rgba(181,80,63,0.3);margin-bottom:16px;
+  }
+  ::selection{ background:var(--brass-soft); }
+  @media (prefers-reduced-motion: reduce){
+    .orb.listening::after, .orb.speaking{ animation:none; }
+    .screen{ animation:none; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* ============================ CONFIG ============================ */
+const BRAND_SITE = "https://jackie-jeans.vercel.app/";
+
+function pad(n){ return n; }
+function range(a,b){ const r=[]; for(let i=a;i<=b;i++) r.push(i); return r; }
+
+const HEIGHT_OPTIONS = range(58,74).map(totalIn=>{
+  const ft = Math.floor(totalIn/12), inch = totalIn%12;
+  return { value: totalIn, label: `${ft}'${inch}"` };
+});
+const WAIST_OPTIONS = range(24,52).map(n=>({ value:n, label:`${n}"` }));
+const HIP_OPTIONS = range(32,60).map(n=>({ value:n, label:`${n}"` }));
+
+const BRANDS = ["Levi's","Wrangler","Lee","Madewell","AG Jeans","J Brand",
+  "Citizens of Humanity","Frame","PAIGE","7 For All Mankind","True Religion",
+  "American Eagle","Gap","Old Navy","Hollister","Abercrombie & Fitch",
+  "Uniqlo","Zara","H&M","Banana Republic"];
+
+const WAIST_FIT = ["Snug","Slightly relaxed","Relaxed"];
+const RISE = ["High rise","Mid rise","Low rise"];
+const THIGH_FIT = ["Fitted","Relaxed","Loose"];
+const FRUSTRATION = ["Waist gap","Hip tightness","Wrong length","Thigh fit","Rise","Other"];
+
+/* Ordered base questions (Q9 brand-sizes are injected dynamically after Q8) */
+const BASE_QUESTIONS = [
+  { id:'height', q:"What's your height?", why:"Drives inseam and length recommendations.", type:'select', options:HEIGHT_OPTIONS },
+  { id:'weight', q:"What's your weight?", why:"Helps calibrate proportional fit. Totally optional.", type:'number-optional', unit:'lbs' },
+  { id:'waist', q:"What's your waist measurement, at the narrowest point?", why:"The most direct sizing input we use.", type:'select', options:WAIST_OPTIONS, unit:'in' },
+  { id:'hip', q:"What's your hip measurement, at the fullest point?", why:"Most denim fit problems come down to the hip.", type:'select', options:HIP_OPTIONS, unit:'in' },
+  { id:'waistFit', q:"How do you like jeans to fit at the waist?", why:"Same measurements, different desired fit.", type:'choice', options:WAIST_FIT },
+  { id:'rise', q:"Where should the waistband sit?", why:"Narrows down the style recommendation.", type:'choice', options:RISE },
+  { id:'thighFit', q:"How should jeans fit through the thighs?", why:"The second most common fit complaint after the waist.", type:'choice', options:THIGH_FIT },
+  { id:'brands', q:"Which denim brands have you bought before?", why:"Calibrates against sizing you already know.", type:'multiselect', options:BRANDS },
+  { id:'frustration', q:"What's your biggest fit frustration when buying jeans?", why:"Helps us explain your recommendation in terms that matter to you.", type:'choice', options:FRUSTRATION },
+];
+
+/* ============================ STATE ============================ */
+const state = {
+  mode: null, // 'manual' | 'voice'
+  step: 0,
+  answers: { height:null, weight:null, weightSkipped:false, waist:null, hip:null,
+             waistFit:null, rise:null, thighFit:null, brands:[], brandSizes:{},
+             frustration:null, frustrationOther:'' },
+  voice: { busy:false, retries:0, fallback:false, log:[] }
+};
+
+function buildSteps(){
+  // Insert per-brand size questions right after 'brands', before 'frustration'
+  const steps = [];
+  for(const q of BASE_QUESTIONS){
+    steps.push(q);
+    if(q.id === 'brands'){
+      for(const b of state.answers.brands){
+        steps.push({ id:`size_${b}`, brand:b, q:`What size did you buy in ${b}?`,
+          why:"Ground truth — this is what makes the recommendation accurate.", type:'brand-size' });
+      }
+    }
+  }
+  return steps;
+}
+
+/* ============================ ROOT RENDER ============================ */
+const app = document.getElementById('app');
+
+function render(){
+  if(!state.mode) return renderWelcome();
+  if(state.mode === 'manual') return renderManual();
+  if(state.mode === 'voice') return renderVoice();
+  if(state.mode === 'done') return renderComplete();
+}
+
+function topbar(label){
+  return `<div class="topbar">
+    <div class="wordmark">JACKIE <span>JEANS</span></div>
+    <div class="tag">${label}</div>
+  </div>`;
+}
+
+/* ============================ WELCOME ============================ */
+function renderWelcome(){
+  app.innerHTML = `
+    ${topbar('Fit Quiz')}
+    <div class="screen">
+      <h1 class="display">Let's find your fit.</h1>
+      <p class="lede">A couple minutes of questions, and we'll know your jeans better than you do. Pick how you'd like to go through it.</p>
+      <div class="choice-grid">
+        <div class="choice-card manual" id="pick-manual">
+          <div class="choice-icon">✎</div>
+          <div>
+            <div class="choice-title">Type it out</div>
+            <div class="choice-desc">A short guided form. Tap through at your own pace.</div>
+          </div>
+        </div>
+        <div class="choice-card voice" id="pick-voice">
+          <div class="choice-icon">🎙</div>
+          <div>
+            <div class="choice-title">Talk it through</div>
+            <div class="choice-desc">A real voice conversation with your fit stylist. Speak your answers out loud.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('pick-manual').onclick = ()=>{ state.mode='manual'; state.step=0; render(); };
+  document.getElementById('pick-voice').onclick = ()=>{
+    if(!speechSupported()){
+      alert("Voice onboarding needs a browser that supports speech recognition (Chrome on Android/desktop works best). Try the typed version instead.");
+      return;
+    }
+    state.mode='voice'; render(); startVoiceFlow();
+  };
+}
+
+/* ============================ MANUAL FLOW ============================ */
+let manualError = '';
+
+function renderManual(){
+  const steps = buildSteps();
+  if(state.step >= steps.length){ finishQuiz(); return; }
+  const q = steps[state.step];
+  const pct = Math.round((state.step/steps.length)*100);
+
+  app.innerHTML = `
+    ${topbar(`Question ${state.step+1} of ${steps.length}`)}
+    <div class="stitch-wrap">
+      <div class="stitch-track"><div class="stitch-needle" style="left:${pct}%"></div></div>
+      <div class="stitch-label">${pct}% stitched up</div>
+    </div>
+    <div class="screen" id="screen">
+      <h1 class="display">${q.q}</h1>
+      ${q.why ? `<p class="why">${q.why}</p>` : ''}
+      <div id="field-area" style="margin-top:18px;"></div>
+      ${manualError ? `<div class="error-msg">${manualError}</div>` : ''}
+      <div class="nav-row">
+        ${state.step>0 ? `<button class="btn btn-ghost" id="back-btn">Back</button>` : ''}
+        <button class="btn btn-primary" id="next-btn">Continue</button>
+      </div>
+    </div>
+  `;
+  manualError = '';
+  renderField(q);
+  document.getElementById('next-btn').onclick = ()=> onManualNext(q);
+  const backBtn = document.getElementById('back-btn');
+  if(backBtn) backBtn.onclick = ()=>{ state.step--; render(); };
+}
+
+function renderField(q){
+  const area = document.getElementById('field-area');
+  const ans = state.answers;
+
+  if(q.type === 'select'){
+    const current = q.id==='height' ? ans.height : (q.id==='waist'?ans.waist:ans.hip);
+    area.innerHTML = `<div class="field">
+      <select class="input" id="f-input">
+        <option value="" disabled ${current==null?'selected':''}>Choose ${q.id}</option>
+        ${q.options.map(o=>`<option value="${o.value}" ${current===o.value?'selected':''}>${o.label}</option>`).join('')}
+      </select>
+    </div>`;
+  }
+  else if(q.type === 'number-optional'){
+    area.innerHTML = `<div class="field">
+      <input class="input" id="f-input" type="number" inputmode="numeric" placeholder="Weight in ${q.unit}" value="${ans.weight ?? ''}" />
+      <button class="skip-link" id="skip-btn">Prefer not to say — skip this</button>
+    </div>`;
+    document.getElementById('skip-btn').onclick = ()=>{ ans.weight=null; ans.weightSkipped=true; state.step++; render(); };
+  }
+  else if(q.type === 'choice'){
+    const current = ans[q.id];
+    area.innerHTML = `<div class="choice-row">
+      ${q.options.map(o=>`<button class="choice-btn ${current===o?'selected':''}" data-val="${o}">${o}</button>`).join('')}
+    </div>` + (q.id==='frustration' ? `<input class="input" id="frus-other" style="margin-top:12px;display:${current==='Other'?'block':'none'}" placeholder="Tell us more (optional)" value="${ans.frustrationOther||''}" />`:'');
+    area.querySelectorAll('.choice-btn').forEach(btn=>{
+      btn.onclick = ()=>{
+        ans[q.id] = btn.dataset.val;
+        if(q.id==='frustration'){
+          const otherInput = document.getElementById('frus-other');
+          otherInput.style.display = btn.dataset.val==='Other' ? 'block' : 'none';
+        }
+        renderField(q);
+      };
+    });
+  }
+  else if(q.type === 'multiselect'){
+    area.innerHTML = `<div class="chip-grid">
+      ${q.options.map(b=>`<button class="chip ${ans.brands.includes(b)?'selected':''}" data-val="${b}">${b}</button>`).join('')}
+    </div>`;
+    area.querySelectorAll('.chip').forEach(chip=>{
+      chip.onclick = ()=>{
+        const v = chip.dataset.val;
+        const idx = ans.brands.indexOf(v);
+        if(idx>-1) ans.brands.splice(idx,1); else ans.brands.push(v);
+        renderField(q);
+      };
+    });
+  }
+  else if(q.type === 'brand-size'){
+    area.innerHTML = `<div class="field">
+      <input class="input" id="f-input" type="text" placeholder="e.g. 30x32, or 8" value="${ans.brandSizes[q.brand]||''}" />
+    </div>`;
+  }
+}
+
+function onManualNext(q){
+  const ans = state.answers;
+  if(q.type === 'select'){
+    const val = document.getElementById('f-input').value;
+    if(val==='') { manualError = 'Please choose an option to continue.'; render(); return; }
+    ans[q.id] = Number(val);
+  }
+  else if(q.type === 'number-optional'){
+    const val = document.getElementById('f-input').value;
+    ans.weight = val==='' ? null : Number(val);
+    ans.weightSkipped = val==='';
+  }
+  else if(q.type === 'choice'){
+    if(!ans[q.id]){ manualError = 'Please pick one to continue.'; render(); return; }
+    if(q.id==='frustration' && ans[q.id]==='Other'){
+      ans.frustrationOther = document.getElementById('frus-other')?.value || '';
+    }
+  }
+  else if(q.type === 'multiselect'){
+    if(ans.brands.length===0){ manualError = 'Pick at least one brand, or tap "no brands" below.'; 
+      // allow explicit none
+    }
+  }
+  else if(q.type === 'brand-size'){
+    const val = document.getElementById('f-input').value.trim();
+    ans.brandSizes[q.brand] = val;
+  }
+  manualError = '';
+  state.step++;
+  render();
+}
+
+/* ============================ VOICE FLOW ============================ */
+function speechSupported(){
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+function ttsSupported(){ return !!window.speechSynthesis; }
+
+let recognizer = null;
+function getRecognizer(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const r = new SR();
+  r.lang = 'en-US';
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  return r;
+}
+
+function speak(text, onend){
+  document.getElementById('orb')?.classList.add('speaking');
+  document.getElementById('orb')?.classList.remove('listening');
+  setCaptionAI(text);
+  if(!ttsSupported()){ onend && onend(); return; }
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 1.0; utter.pitch = 1.02;
+  utter.onend = ()=>{ document.getElementById('orb')?.classList.remove('speaking'); onend && onend(); };
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+
+function listen(onresult, onerror){
+  const orb = document.getElementById('orb');
+  orb?.classList.add('listening');
+  setStatus('Listening…');
+  setCaptionUser('');
+  try{
+    recognizer = getRecognizer();
+  }catch(e){ onerror&&onerror(); return; }
+  recognizer.onresult = (e)=>{
+    const transcript = e.results[0][0].transcript;
+    setCaptionUser(`"${transcript}"`);
+    orb?.classList.remove('listening');
+    onresult(transcript);
+  };
+  recognizer.onerror = ()=>{ orb?.classList.remove('listening'); onerror && onerror(); };
+  recognizer.onend = ()=>{ orb?.classList.remove('listening'); };
+  recognizer.start();
+}
+
+function setCaptionAI(t){ const el=document.getElementById('caption-ai'); if(el) el.textContent = t; }
+function setCaptionUser(t){ const el=document.getElementById('caption-user'); if(el) el.textContent = t; }
+function setStatus(t){ const el=document.getElementById('voice-status'); if(el) el.textContent = t; }
+
+function renderVoice(){
+  app.innerHTML = `
+    ${topbar('Voice Fit Quiz')}
+    <div class="screen">
+      <div class="voice-stage">
+        <div class="voice-status" id="voice-status">Starting…</div>
+        <div class="orb" id="orb"><div class="orb-icon">🎙</div></div>
+        <div class="caption-card">
+          <div class="caption-ai" id="caption-ai">—</div>
+          <div class="caption-user" id="caption-user"></div>
+        </div>
+        <div class="dot-row" id="dot-row"></div>
+        <div id="fallback-area"></div>
+        <div class="voice-controls">
+          <button class="icon-btn" id="repeat-btn">Repeat question</button>
+          <button class="icon-btn danger" id="switch-btn">Switch to typing</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('switch-btn').onclick = ()=>{
+    window.speechSynthesis?.cancel();
+    if(recognizer) try{recognizer.abort();}catch(e){}
+    state.mode='manual'; state.step=0; render();
+  };
+  document.getElementById('repeat-btn').onclick = ()=>{
+    if(state.voice.currentPrompt) speak(state.voice.currentPrompt, ()=> listenForCurrent());
+  };
+  renderDots();
+}
+
+function renderDots(){
+  const steps = buildSteps();
+  const row = document.getElementById('dot-row');
+  if(!row) return;
+  row.innerHTML = steps.map((s,i)=>`<div class="dot ${i<state.step?'done':(i===state.step?'active':'')}"></div>`).join('');
+}
+
+let listenForCurrent = ()=>{};
+
+async function startVoiceFlow(){
+  speak("Hi! I'm your Jackie Jeans fit stylist. I'll ask you a few quick questions about your size and how you like your jeans to fit — just answer naturally. Ready when you are.",
+    ()=> runVoiceStep());
+}
+
+function runVoiceStep(){
+  const steps = buildSteps();
+  if(state.step >= steps.length){ finishQuiz(); return; }
+  renderVoice();
+  const q = steps[state.step];
+  const prompt = voicePrompt(q);
+  state.voice.currentPrompt = prompt;
+  state.voice.retries = 0;
+  speak(prompt, ()=> attemptListen(q));
+}
+
+function voicePrompt(q){
+  if(q.id==='weight') return "What's your weight? Totally optional — just say skip if you'd rather not.";
+  if(q.id==='brands') return "Which denim brands have you bought before? You can name a few, or say none.";
+  if(q.id==='frustration') return "What's your biggest frustration when buying jeans — waist gap, hip tightness, wrong length, thigh fit, rise, or something else?";
+  if(q.type==='brand-size') return `What size did you buy in ${q.brand}?`;
+  return q.q;
+}
+
+function attemptListen(q){
+  setStatus('Listening…');
+  listen(
+    (transcript)=> handleVoiceAnswer(q, transcript),
+    ()=> handleVoiceError(q)
+  );
+  listenForCurrent = ()=> attemptListen(q);
+}
+
+function handleVoiceError(q){
+  setStatus('Having trouble hearing you');
+  state.voice.retries++;
+  if(state.voice.retries >= 2){ showFallback(q); return; }
+  speak("Sorry, I didn't catch that. Could you say it again?", ()=> attemptListen(q));
+}
+
+function handleVoiceAnswer(q, transcript){
+  const parsed = parseVoiceAnswer(q, transcript);
+  if(parsed === null){
+    state.voice.retries++;
+    if(state.voice.retries >= 2){ showFallback(q); return; }
+    speak("Hmm, I didn't quite get that. Could you say that again, a little differently?", ()=> attemptListen(q));
+    return;
+  }
+  applyAnswer(q, parsed);
+  const confirmText = confirmationFor(q, parsed);
+  speak(confirmText, ()=>{ state.step++; runVoiceStep(); });
+}
+
+function showFallback(q){
+  setStatus("Let's just tap it instead");
+  const area = document.getElementById('fallback-area');
+  if(!area) return;
+  let html = '';
+  if(q.type==='select' || q.type==='choice'){
+    const opts = q.options.map(o=>{
+      const label = typeof o==='object' ? o.label : o;
+      const val = typeof o==='object' ? o.value : o;
+      return `<button class="chip" data-val="${val}">${label}</button>`;
+    }).join('');
+    html = `<div class="fallback-chip-grid">${opts}</div>`;
+  } else if(q.type==='multiselect'){
+    html = `<div class="fallback-chip-grid">${q.options.map(b=>`<button class="chip" data-val="${b}">${b}</button>`).join('')}<button class="chip" data-val="__none">None</button></div>`;
+  } else {
+    html = `<input class="input" id="fallback-input" placeholder="Type your answer" style="margin-top:10px" />
+            <button class="btn btn-primary" id="fallback-submit" style="margin-top:10px">Submit</button>`;
+  }
+  area.innerHTML = html;
+
+  if(q.type==='multiselect'){
+    const picked = new Set();
+    area.querySelectorAll('.chip').forEach(chip=>{
+      chip.onclick = ()=>{
+        const v = chip.dataset.val;
+        if(v==='__none'){ applyAnswer(q, []); advanceAfterFallback(q); return; }
+        chip.classList.toggle('selected');
+        if(picked.has(v)) picked.delete(v); else picked.add(v);
+      };
+    });
+    const doneBtn = document.createElement('button');
+    doneBtn.className='btn btn-primary'; doneBtn.textContent='Continue'; doneBtn.style.marginTop='12px';
+    area.appendChild(doneBtn);
+    doneBtn.onclick = ()=>{ applyAnswer(q, Array.from(picked)); advanceAfterFallback(q); };
+  } else if(q.type==='select' || q.type==='choice'){
+    area.querySelectorAll('.chip').forEach(chip=>{
+      chip.onclick = ()=>{
+        const raw = chip.dataset.val;
+        const val = q.type==='select' ? Number(raw) : raw;
+        applyAnswer(q, val);
+        advanceAfterFallback(q);
+      };
+    });
+  } else {
+    document.getElementById('fallback-submit').onclick = ()=>{
+      const v = document.getElementById('fallback-input').value.trim();
+      applyAnswer(q, v);
+      advanceAfterFallback(q);
+    };
+  }
+}
+
+function advanceAfterFallback(q){
+  speak("Got it, thanks.", ()=>{ state.step++; runVoiceStep(); });
+}
+
+function applyAnswer(q, value){
+  const ans = state.answers;
+  if(q.id==='weight'){ ans.weight = value==='skip' ? null : value; ans.weightSkipped = value==='skip'; }
+  else if(q.id==='brands'){ ans.brands = value; }
+  else if(q.type==='brand-size'){ ans.brandSizes[q.brand] = value; }
+  else if(q.id==='frustration'){ ans.frustration = value.label || value; if(value.detail) ans.frustrationOther = value.detail; }
+  else { ans[q.id] = value; }
+}
+
+function confirmationFor(q, value){
+  if(q.id==='height') return `Perfect, ${HEIGHT_OPTIONS.find(o=>o.value===value)?.label||value} it is.`;
+  if(q.id==='weight') return value===null ? "No problem, skipping that one." : `Got it, ${value} pounds.`;
+  if(q.id==='waist') return `Got it — waist ${value} inches.`;
+  if(q.id==='hip') return `Great, hip ${value} inches.`;
+  if(q.id==='waistFit') return `Got it, ${value.toLowerCase()} at the waist.`;
+  if(q.id==='rise') return `${value} it is.`;
+  if(q.id==='thighFit') return `Got it — ${value.toLowerCase()} through the thigh.`;
+  if(q.id==='brands') return value.length ? `Nice, noted: ${value.join(', ')}.` : "No worries, we'll skip brand sizing.";
+  if(q.type==='brand-size') return `${value} in ${q.brand}, got it.`;
+  if(q.id==='frustration') return `Thanks for sharing — that helps us explain your fit.`;
+  return "Got it.";
+}
+
+/* ---- Voice answer parsing ---- */
+const NUM_WORDS = {zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,
+  eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,
+  twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+
+function wordsToNumber(text){
+  text = text.toLowerCase().replace(/-/g,' ');
+  const digitMatch = text.match(/\d+(\.\d+)?/);
+  if(digitMatch) return parseFloat(digitMatch[0]);
+  const tokens = text.split(/\s+/);
+  let total = null, found=false;
+  for(const t of tokens){
+    if(NUM_WORDS[t]!==undefined){
+      total = (total||0) + NUM_WORDS[t]; found=true;
+    }
+  }
+  return found ? total : null;
+}
+
+function nearestOption(num, options){
+  if(num===null) return null;
+  let best=options[0], bestDiff=Infinity;
+  for(const o of options){
+    const d = Math.abs(o.value-num);
+    if(d<bestDiff){ bestDiff=d; best=o; }
+  }
+  return best.value;
+}
+
+function parseVoiceAnswer(q, transcriptRaw){
+  const t = transcriptRaw.toLowerCase().trim();
+  const skipWords = ['skip','pass','no thanks','rather not','prefer not','none of your business','next'];
+
+  if(q.id==='weight'){
+    if(skipWords.some(w=>t.includes(w))) return 'skip';
+    const n = wordsToNumber(t);
+    return (n!==null && n>50 && n<500) ? Math.round(n) : null;
+  }
+  if(q.id==='height'){
+    // try "X foot/feet Y" or "X Y" or "X'Y"
+    const m = t.match(/(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven)\s*(?:foot|feet|ft|')?\s*(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven)?/);
+    if(!m) return null;
+    const feet = NUM_WORDS[m[1]] ?? parseInt(m[1]);
+    const inches = m[2]!==undefined ? (NUM_WORDS[m[2]] ?? parseInt(m[2])) : 0;
+    if(isNaN(feet)) return null;
+    const total = feet*12 + (isNaN(inches)?0:inches);
+    return nearestOption(total, HEIGHT_OPTIONS);
+  }
+  if(q.id==='waist' || q.id==='hip'){
+    const n = wordsToNumber(t);
+    if(n===null) return null;
+    const opts = q.id==='waist' ? WAIST_OPTIONS : HIP_OPTIONS;
+    return nearestOption(n, opts);
+  }
+  if(q.id==='waistFit'){
+    if(t.includes('slightly')) return 'Slightly relaxed';
+    if(t.includes('snug') || t.includes('tight')) return 'Snug';
+    if(t.includes('relax')) return 'Relaxed';
+    return null;
+  }
+  if(q.id==='rise'){
+    if(t.includes('high')) return 'High rise';
+    if(t.includes('mid') || t.includes('middle')) return 'Mid rise';
+    if(t.includes('low')) return 'Low rise';
+    return null;
+  }
+  if(q.id==='thighFit'){
+    if(t.includes('loose')) return 'Loose';
+    if(t.includes('relax')) return 'Relaxed';
+    if(t.includes('fit')) return 'Fitted';
+    return null;
+  }
+  if(q.id==='brands'){
+    if(t.includes('none') || t.includes("haven't") || t.includes('no brand')) return [];
+    const norm = s=> s.toLowerCase().replace(/[^a-z0-9 ]/g,'');
+    const tn = norm(t);
+    const matches = BRANDS.filter(b=> tn.includes(norm(b)) );
+    return matches.length ? matches : null;
+  }
+  if(q.type==='brand-size'){
+    return transcriptRaw.trim() || null;
+  }
+  if(q.id==='frustration'){
+    if(t.includes('waist')) return {label:'Waist gap'};
+    if(t.includes('hip')) return {label:'Hip tightness'};
+    if(t.includes('length') || t.includes('short') || t.includes('long')) return {label:'Wrong length'};
+    if(t.includes('thigh')) return {label:'Thigh fit'};
+    if(t.includes('rise')) return {label:'Rise'};
+    if(t.trim().length>0) return {label:'Other', detail:transcriptRaw};
+    return null;
+  }
+  return null;
+}
+
+/* ============================ COMPLETION ============================ */
+function finishQuiz(){
+  state.mode = 'done';
+  render();
+}
+
+function fitTakeaway(){
+  const a = state.answers;
+  if(a.waist==null || a.hip==null) return "We've got your fit profile saved.";
+  const diff = a.hip - a.waist;
+  let body = "balanced through the waist and hip";
+  if(diff>=10) body = "you likely need a fit cut generously through the hip relative to the waist";
+  else if(diff<=6) body = "a straighter fit through the waist and hip will probably suit you best";
+  return `Based on your ${a.waist}" waist and ${a.hip}" hip, ${body}. Paired with a ${(a.rise||'').toLowerCase()} and ${(a.thighFit||'').toLowerCase()} thigh, we've got a strong starting point for your recommendation.`;
+}
+
+function renderComplete(){
+  const a = state.answers;
+  const profile = encodeURIComponent(btoa(JSON.stringify(a)));
+  const redirectUrl = `${BRAND_SITE}?fitProfile=${profile}`;
+
+  app.innerHTML = `
+    ${topbar('All set')}
+    <div class="screen complete-wrap">
+      <div class="stamp">✓</div>
+      <h1 class="display">You're fit-quiz official.</h1>
+      <p class="lede">${fitTakeaway()}</p>
+      <div class="summary-card">
+        <div><b>Height</b> — ${HEIGHT_OPTIONS.find(o=>o.value===a.height)?.label || '—'}</div>
+        <div><b>Weight</b> — ${a.weight ? a.weight+' lbs' : 'Skipped'}</div>
+        <div><b>Waist / Hip</b> — ${a.waist||'—'}" / ${a.hip||'—'}"</div>
+        <div><b>Waist fit</b> — ${a.waistFit||'—'}</div>
+        <div><b>Rise</b> — ${a.rise||'—'}</div>
+        <div><b>Thigh fit</b> — ${a.thighFit||'—'}</div>
+        <div><b>Brands</b> — ${a.brands.length? a.brands.join(', ') : 'None given'}</div>
+        <div><b>Frustration</b> — ${a.frustration||'—'}${a.frustrationOther? ' — '+a.frustrationOther:''}</div>
+      </div>
+      <button class="btn btn-primary" id="go-btn">Continue to Jackie Jeans →</button>
+      <div class="redirect-note" id="redirect-note">Taking you there automatically in 6s…</div>
+    </div>
+  `;
+  document.getElementById('go-btn').onclick = ()=> { window.location.href = redirectUrl; };
+  let s=6;
+  const note = document.getElementById('redirect-note');
+  const iv = setInterval(()=>{
+    s--;
+    if(note) note.textContent = `Taking you there automatically in ${s}s…`;
+    if(s<=0){ clearInterval(iv); window.location.href = redirectUrl; }
+  },1000);
+}
+
+/* ============================ BOOT ============================ */
+render();
+</script>
+</body>
+</html>
